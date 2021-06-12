@@ -1,24 +1,91 @@
 import { ofType } from 'redux-observable';
-import { of } from 'rxjs';
-import { map, switchMap, catchError } from 'rxjs/operators';
+import { Subject, of, merge } from 'rxjs';
+import {
+  map,
+  switchMap,
+  takeUntil,
+  catchError,
+  mergeMap,
+} from 'rxjs/operators';
 import { webSocket } from 'rxjs/webSocket';
 import {
   connectWebSocket,
-  receiveMessage,
+  connected,
   disconnect,
+  disconnected,
+  sendMessage,
+  sentMessage,
+  receiveMessage,
 } from 'store/slices/webSocket';
 
-const createWebSocket = ({ url }) => webSocket(url);
+let webSocketSubject = null;
+const onOpenSubject = new Subject();
+const onCloseSubject = new Subject();
 
-export function web() {
-}
+const createWebSocket = ({ url }) => {
+  webSocketSubject = webSocket({
+    url,
+    openObserver: onOpenSubject,
+    closeObserver: onCloseSubject,
+  });
+  return webSocketSubject;
+};
 
-export function webSocketEpic(action$) {
+function connectEpic(action$) {
   return action$.pipe(
     ofType(connectWebSocket),
     switchMap((action) => createWebSocket(action.payload).pipe(
-      map(receiveMessage),
+      map((msg) => receiveMessage(msg).payload),
       catchError((error) => of(disconnect(error))),
+    )),
+    takeUntil(action$.pipe(ofType(disconnect))),
+  );
+}
+
+function connectedEpic(action$) {
+  return action$.pipe(
+    ofType(connectWebSocket),
+    switchMap(({ payload }) => merge(
+      onOpenSubject.pipe(
+        map((event) => {
+          if (payload.onOpen) payload.onOpen(event.target);
+          return connected();
+        }),
+      ),
+      onCloseSubject.pipe(
+        map((event) => {
+          if (payload.onClose) payload.onClose(event);
+          return disconnect();
+        }),
+      ),
     )),
   );
 }
+
+function sendMessageEpic(action$) {
+  return action$.pipe(
+    ofType(sendMessage),
+    map((action) => {
+      webSocketSubject.next(action.payload);
+      return sentMessage();
+    }),
+  );
+}
+
+function disconnectEpic(action$) {
+  return action$.pipe(
+    ofType(disconnect),
+    mergeMap(() => {
+      onCloseSubject.complete();
+      webSocketSubject.complete();
+      return [disconnected()];
+    }),
+  );
+}
+
+export default [
+  connectEpic,
+  connectedEpic,
+  sendMessageEpic,
+  disconnectEpic,
+];
