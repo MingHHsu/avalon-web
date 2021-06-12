@@ -5,6 +5,7 @@ import propTypes from 'prop-types';
 import {
   connectWebSocket,
   disconnect,
+  sendMessage,
 } from 'store/slices/webSocket';
 import * as pt from 'lib/propTypes';
 
@@ -16,7 +17,14 @@ export default function LobbyRoute({
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(connectWebSocket({ url: 'ws://localhost:5000/lobby' }));
+    dispatch(connectWebSocket({
+      url: 'ws://localhost:5000/lobby',
+      onOpen: () => dispatch(sendMessage({
+        type: 'ENTER_LOBBY',
+        payload: { name: 'lazyboy' },
+      })),
+      onClose: () => console.log('close'),
+    }));
     return () => dispatch(disconnect());
   }, []);
 
