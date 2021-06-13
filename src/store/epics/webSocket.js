@@ -1,9 +1,12 @@
 import { ofType } from 'redux-observable';
-import { Subject, of, merge } from 'rxjs';
+import {
+  of,
+  merge,
+  Subject,
+} from 'rxjs';
 import {
   map,
   switchMap,
-  takeUntil,
   catchError,
   mergeMap,
 } from 'rxjs/operators';
@@ -16,49 +19,48 @@ import {
   sendMessage,
   sentMessage,
   receiveMessage,
+  isClosed,
 } from 'store/slices/webSocket';
 
-let webSocketSubject = null;
-const onOpenSubject = new Subject();
-const onCloseSubject = new Subject();
+let webSocket$ = null;
+let onOpen$ = new Subject();
+let onClose$ = new Subject();
 
-const createWebSocket = ({ url }) => {
-  webSocketSubject = webSocket({
+const webSocketConnection$ = ({ url }) => {
+  onOpen$ = new Subject();
+  onClose$ = new Subject();
+  webSocket$ = webSocket({
     url,
-    openObserver: onOpenSubject,
-    closeObserver: onCloseSubject,
+    openObserver: onOpen$,
+    closeObserver: onClose$,
   });
-  return webSocketSubject;
+  return webSocket$;
 };
 
 function connectEpic(action$) {
   return action$.pipe(
     ofType(connectWebSocket),
-    switchMap((action) => createWebSocket(action.payload).pipe(
-      map((msg) => receiveMessage(msg).payload),
-      catchError((error) => of(disconnect(error))),
-    )),
-    takeUntil(action$.pipe(ofType(disconnect))),
-  );
-}
-
-function connectedEpic(action$) {
-  return action$.pipe(
-    ofType(connectWebSocket),
-    switchMap(({ payload }) => merge(
-      onOpenSubject.pipe(
-        map((event) => {
-          if (payload.onOpen) payload.onOpen(event.target);
-          return connected();
-        }),
-      ),
-      onCloseSubject.pipe(
-        map((event) => {
-          if (payload.onClose) payload.onClose(event);
-          return disconnect();
-        }),
-      ),
-    )),
+    switchMap((action) => {
+      const { payload } = action;
+      return merge(
+        webSocketConnection$(payload).pipe(
+          map((msg) => receiveMessage(msg).payload),
+          catchError((error) => of(disconnect(error))),
+        ),
+        onOpen$.pipe(
+          map((event) => {
+            if (payload.onOpen) payload.onOpen(event.target);
+            return connected();
+          }),
+        ),
+        onClose$.pipe(
+          map((event) => {
+            if (payload.onClose) payload.onClose(event.target);
+            return isClosed();
+          }),
+        ),
+      );
+    }),
   );
 }
 
@@ -66,7 +68,7 @@ function sendMessageEpic(action$) {
   return action$.pipe(
     ofType(sendMessage),
     map((action) => {
-      webSocketSubject.next(action.payload);
+      webSocket$.next(action.payload);
       return sentMessage();
     }),
   );
@@ -76,8 +78,7 @@ function disconnectEpic(action$) {
   return action$.pipe(
     ofType(disconnect),
     mergeMap(() => {
-      onCloseSubject.complete();
-      webSocketSubject.complete();
+      webSocket$.complete();
       return [disconnected()];
     }),
   );
@@ -85,7 +86,6 @@ function disconnectEpic(action$) {
 
 export default [
   connectEpic,
-  connectedEpic,
   sendMessageEpic,
   disconnectEpic,
 ];

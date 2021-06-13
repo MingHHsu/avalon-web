@@ -51,6 +51,9 @@ const {
     receiveMessage(state) {
       return state;
     },
+    isClosed(state) {
+      return state;
+    },
   },
 });
 
@@ -62,6 +65,7 @@ export const {
   sendMessage,
   sentMessage,
   receiveMessage,
+  isClosed,
 } = actions;
 
 export default reducer;
