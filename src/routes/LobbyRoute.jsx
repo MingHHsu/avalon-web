@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import propTypes from 'prop-types';
 import { useDispatch } from 'react-redux';
 import { Route } from 'react-router-dom';
-import propTypes from 'prop-types';
+import useWebSocket from 'hooks/useWebSocket';
 import {
-  connectWebSocket,
-  disconnect,
   sendMessage,
 } from 'store/slices/webSocket';
 import * as pt from 'lib/propTypes';
@@ -15,18 +14,13 @@ export default function LobbyRoute({
   component: Component,
 }) {
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    dispatch(connectWebSocket({
-      url: 'ws://localhost:5000/lobby',
-      onOpen: () => dispatch(sendMessage({
-        type: 'ENTER_LOBBY',
-        payload: { name: 'lazyboy' },
-      })),
-      onClose: () => console.log('close'),
-    }));
-    return () => dispatch(disconnect());
-  }, []);
+  useWebSocket(dispatch, {
+    url: 'ws://localhost:5000/lobby',
+    onOpen: () => dispatch(sendMessage({
+      type: 'ENTER_LOBBY',
+      payload: { name: 'lazyboy' },
+    })),
+  });
 
   const RenderComponent = () => <Component />;
   return <Route exact={exact} path={path} render={RenderComponent} />;
