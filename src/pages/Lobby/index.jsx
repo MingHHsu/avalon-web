@@ -10,7 +10,7 @@ import {
 } from './styled';
 
 export default function Lobby() {
-  const rooms = useSelector((state) => state.rooms);
+  const rooms = useSelector((state) => state.room.list);
   return (
     <LobbyRoot>
       <RoomList>
@@ -18,13 +18,14 @@ export default function Lobby() {
           id,
           name,
           number,
-          currentPlayers,
+          players,
         }) => (
           <Room
             key={id}
+            id={id}
             name={name}
             number={number}
-            currentPlayers={currentPlayers}
+            players={players}
           />
         ))}
       </RoomList>

@@ -1,19 +1,25 @@
-import React from 'react';
+import React, { memo } from 'react';
+import { useDispatch } from 'react-redux';
+import { push } from 'connected-react-router';
 import propTypes from 'prop-types';
+import { equals } from 'ramda';
 import {
   RoomRoot,
   RoomName,
   RoomNumber,
-  RoomCurrentPlayers,
+  RoomPlayers,
 } from './styled';
 
-export default function Room({
+function Room({
+  id,
   name,
   number,
-  currentPlayers,
+  players,
 }) {
+  const dispatch = useDispatch();
+  const handleEnterRoom = () => dispatch(push(`/room/${id}`));
   return (
-    <RoomRoot>
+    <RoomRoot onClick={handleEnterRoom}>
       <RoomName>
         房名：
         {name}
@@ -22,16 +28,19 @@ export default function Room({
         房號：
         {number}
       </RoomNumber>
-      <RoomCurrentPlayers>
+      <RoomPlayers>
         玩家數：
-        {currentPlayers}
-      </RoomCurrentPlayers>
+        {players}
+      </RoomPlayers>
     </RoomRoot>
   );
 }
 
 Room.propTypes = {
+  id: propTypes.string.isRequired,
   name: propTypes.string.isRequired,
   number: propTypes.number.isRequired,
-  currentPlayers: propTypes.number.isRequired,
+  players: propTypes.number.isRequired,
 };
+
+export default memo(Room, (prev, next) => equals(prev, next));

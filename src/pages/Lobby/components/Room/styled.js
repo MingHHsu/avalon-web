@@ -11,5 +11,5 @@ export const RoomName = styled.div`
 export const RoomNumber = styled.div`
 `;
 
-export const RoomCurrentPlayers = styled.div`
+export const RoomPlayers = styled.div`
 `;
