@@ -15,8 +15,7 @@ export default function GameRoomRoute({
   if (computedMatch.params.id) {
     const dispatch = useDispatch();
     const { id } = computedMatch.params;
-    useWebSocket(dispatch, {
-      url: 'ws://localhost:5000/room',
+    useWebSocket(dispatch, '/room', {
       onOpen: () => dispatch(sendMessage({
         type: 'ENTER_ROOM',
         payload: { id },

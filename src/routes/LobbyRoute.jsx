@@ -14,8 +14,7 @@ export default function LobbyRoute({
   component: Component,
 }) {
   const dispatch = useDispatch();
-  useWebSocket(dispatch, {
-    url: 'ws://localhost:5000/lobby',
+  useWebSocket(dispatch, '/lobby', {
     onOpen: () => dispatch(sendMessage({
       type: 'ENTER_LOBBY',
       payload: { name: 'lazyboy' },

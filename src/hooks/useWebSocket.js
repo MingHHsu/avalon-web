@@ -4,9 +4,13 @@ import {
   disconnect,
 } from 'store/slices/webSocket';
 
-export default function useWebSocket(dispatch, config) {
+export default function useWebSocket(dispatch, path, config) {
   useEffect(() => {
-    dispatch(connectWebSocket(config));
+    const host = process.env.REACT_APP_WEBSOCKET_HOST;
+    dispatch(connectWebSocket({
+      url: path ? host + path : host,
+      ...config,
+    }));
     return () => dispatch(disconnect());
   }, []);
 }
