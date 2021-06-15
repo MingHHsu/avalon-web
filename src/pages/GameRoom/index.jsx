@@ -7,7 +7,7 @@ export default function GameRoom() {
     <div>
       Game Room
       {room?.players.length > 0 && room.players.map((player) => (
-        <div>{player.name}</div>
+        <div key={player.id}>{player.name}</div>
       ))}
     </div>
   );
