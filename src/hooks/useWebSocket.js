@@ -6,7 +6,7 @@ import {
 
 export default function useWebSocket(dispatch, path, config) {
   useEffect(() => {
-    const host = process.env.REACT_APP_WEBSOCKET_HOST;
+    const host = process.env.REACT_APP_WEBSOCKET_HOST || 'ws://localhost:5000';
     dispatch(connectWebSocket({
       url: path ? host + path : host,
       ...config,
